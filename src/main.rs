@@ -74,9 +74,9 @@ const S33: Comb = 5;
 const R15: Comb = 6;
 const R26: Comb = 7;
 const R16: Comb = 8;
-const House: Comb = 9;
-const Chance: Comb = 10;
-const Yahtzee: Comb = 11;
+const S23: Comb = 9;
+const CHANCE: Comb = 10;
+const YAHTZEE: Comb = 11;
 
 enum Action {
     Combination(Comb),
@@ -95,9 +95,9 @@ impl fmt::Debug for Action {
             &Action::Combination(R15) => write!(fmt, "Action::Combination(R15)"),
             &Action::Combination(R26) => write!(fmt, "Action::Combination(R26)"),
             &Action::Combination(R16) => write!(fmt, "Action::Combination(R16)"),
-            &Action::Combination(House) => write!(fmt, "Action::Combination(House)"),
-            &Action::Combination(Chance) => write!(fmt, "Action::Combination(Chance)"),
-            &Action::Combination(Yahtzee) => write!(fmt, "Action::Combination(Yahtzee)"),
+            &Action::Combination(S23) => write!(fmt, "Action::Combination(S23)"),
+            &Action::Combination(CHANCE) => write!(fmt, "Action::Combination(CHANCE)"),
+            &Action::Combination(YAHTZEE) => write!(fmt, "Action::Combination(YAHTZEE)"),
             &Action::Combination(c) => write!(fmt, "Action::Combination({})", c),
             &Action::Side(s) => write!(fmt, "Action::Side({} - 1)", s + 1),
         }
@@ -114,7 +114,7 @@ fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
     // 1-5 (15)
     // 2-6 (20)
     // 1-6 (30)
-    // House
+    // S23
     // Chance
     // Yatzy (100 + dice sum)
     let mut pair_sum = 0u32;
@@ -173,9 +173,9 @@ fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
         f(R26, 0);
         f(R16, 0);
     }
-    f(House, if s2 > 0 && s3 > 0 { s2 * 2 + s3 * 3 } else { 0 });
-    f(Chance, sum);
-    f(Yahtzee, if s6 > 0 { 100 + 6 * s6 } else { 0 });
+    f(S23, if s2 > 0 && s3 > 0 { s2 * 2 + s3 * 3 } else { 0 });
+    f(CHANCE, sum);
+    f(YAHTZEE, if s6 > 0 { 100 + 6 * s6 } else { 0 });
 }
 
 struct State(u32);
@@ -236,9 +236,9 @@ impl State {
         if !self.has_comb(R15) { ub += 1 + 2 + 3 + 4 + 5; }
         if !self.has_comb(R26) { ub += 2 + 3 + 4 + 5 + 6; }
         if !self.has_comb(R16) { ub += 1 + 2 + 3 + 4 + 5 + 6; }
-        if !self.has_comb(House) { ub += 5 * SIDES as u32 - 2; }
-        if !self.has_comb(Chance) { ub += DICE_COUNT as u32 * SIDES as u32; }
-        if !self.has_comb(Yahtzee) { ub += 100 + DICE_COUNT as u32 * SIDES as u32; }
+        if !self.has_comb(S23) { ub += 5 * SIDES as u32 - 2; }
+        if !self.has_comb(CHANCE) { ub += DICE_COUNT as u32 * SIDES as u32; }
+        if !self.has_comb(YAHTZEE) { ub += 100 + DICE_COUNT as u32 * SIDES as u32; }
         // 405+126+50 = 581
         ub
     }
