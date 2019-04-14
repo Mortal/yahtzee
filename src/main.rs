@@ -2,6 +2,8 @@ use std::fmt;
 
 const SIDES: usize = 6;
 const DICE_COUNT: usize = 6;
+const BONUS_LIMIT: u32 = 4 * (1 + 2 + 3 + 4 + 5 + 6);
+const BONUS: u32 = 50;
 
 #[derive(Debug, Clone, Copy)]
 struct Outcome {
@@ -217,26 +219,26 @@ impl State {
         for d in 0..SIDES {
             if self.has_side(d) { continue; }
             let s = (d as u32 + 1) * (DICE_COUNT as u32);
-            if score < 84 && score + s >= 84 {
-                score = 84;
-                ub += 50;
+            if score < BONUS_LIMIT && score + s >= BONUS_LIMIT {
+                score = BONUS_LIMIT;
+                ub += BONUS;
             } else {
                 score += s;
             }
             ub += s;
         }
-        if !self.has_comb(S2) { ub += 12; }
-        if !self.has_comb(S22) { ub += 22; }
-        if !self.has_comb(S222) { ub += 30; }
-        if !self.has_comb(S3) { ub += 18; }
-        if !self.has_comb(S4) { ub += 24; }
-        if !self.has_comb(S33) { ub += 18 + 15; }
-        if !self.has_comb(R15) { ub += 15; }
-        if !self.has_comb(R26) { ub += 21; }
-        if !self.has_comb(R16) { ub += 30; }
-        if !self.has_comb(House) { ub += 18 + 10; }
-        if !self.has_comb(Chance) { ub += 36; }
-        if !self.has_comb(Yahtzee) { ub += 136; }
+        if !self.has_comb(S2) { ub += 2 * SIDES as u32; }
+        if !self.has_comb(S22) { ub += 4 * SIDES as u32 - 2; }
+        if !self.has_comb(S222) { ub += 6 * SIDES as u32 - 6; }
+        if !self.has_comb(S3) { ub += 3 * SIDES as u32; }
+        if !self.has_comb(S4) { ub += 4 * SIDES as u32; }
+        if !self.has_comb(S33) { ub += 6 * SIDES as u32 - 3; }
+        if !self.has_comb(R15) { ub += 1 + 2 + 3 + 4 + 5; }
+        if !self.has_comb(R26) { ub += 2 + 3 + 4 + 5 + 6; }
+        if !self.has_comb(R16) { ub += 1 + 2 + 3 + 4 + 5 + 6; }
+        if !self.has_comb(House) { ub += 5 * SIDES as u32 - 2; }
+        if !self.has_comb(Chance) { ub += DICE_COUNT as u32 * SIDES as u32; }
+        if !self.has_comb(Yahtzee) { ub += 100 + DICE_COUNT as u32 * SIDES as u32; }
         // 405+126+50 = 581
         ub
     }
@@ -261,9 +263,9 @@ fn actions<F: FnMut(Action, u32, u32)>(state: u32, o: Outcome, mut f: F) {
         }
         let s = (d as u32 + 1) * (o.histogram[d] as u32);
         let (new_score, bonus) =
-            if score < 84 && score + s >= 84 {
-                (84, 50)
-            } else if score < 84 {
+            if score < BONUS_LIMIT && score + s >= BONUS_LIMIT {
+                (BONUS_LIMIT, BONUS)
+            } else if score < BONUS_LIMIT {
                 (score + s, 0)
             } else {
                 (score, 0)
@@ -279,18 +281,39 @@ fn actions<F: FnMut(Action, u32, u32)>(state: u32, o: Outcome, mut f: F) {
 }
 
 fn main() {
-    let mut best_score = vec![0xFFFFu16; 85 << 18];
+    let mut reachable = vec![0u8; (1 + BONUS_LIMIT as usize) << 18];
+    reachable[0] = 1;
+    let mut skipped = 0;
+    for i in 0..reachable.len() {
+        if reachable[i] == 0 {
+            skipped += 1;
+            continue;
+        }
+        for o in OutcomeIterator::new() {
+            actions(i as u32, o, |action, next_state, points| {
+                let next_state = next_state as usize;
+                assert!(next_state > i);
+                reachable[next_state] = 1;
+            });
+        }
+    }
+    println!("Skipped: {}", skipped);
+}
+
+fn iter_all() {
+    let mut best_score = vec![0xFFFFu16; (1 + BONUS_LIMIT as usize) << 18];
     let mut best_so_far = 0;
     best_score[0] = 0;
+    let mut skipped = 0;
     for i in 0..best_score.len() {
         if best_score[i] == 0xFFFF {
+            skipped += 1;
             continue;
+        }
+        if i % 10000 == 0 {
+            println!("{:7} {:3} {:?}", skipped, best_score[i], State(i as u32));
         }
         let ub = best_score[i] + State(i as u32).upper_bound_points() as u16;
-        if ub != 581 {
-            //println!("SKIP {:3} {:3} {:?}", best_score[i], ub, State(i as u32));
-            continue;
-        }
         best_so_far = best_so_far.max(best_score[i]);
         let mut ub_correct = false;
         for o in OutcomeIterator::new() {
@@ -324,4 +347,5 @@ fn main() {
             println!("TEST {:3} {:3} {:?}", best_score[i], ub, State(i as u32));
         }
     }
+    println!("Skipped: {}", skipped);
 }
