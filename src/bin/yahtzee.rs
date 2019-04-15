@@ -81,7 +81,7 @@ fn main() {
         for o in outcomes() {
             let mut best = 0f64;
             actions(s, o, |_action, next_state, points| {
-                let i = State::decode(next_state).combination_mask as usize;
+                let i = next_state.combination_mask as usize;
                 let value = state_value[i] + points as f64;
                 best = best.max(value);
             });

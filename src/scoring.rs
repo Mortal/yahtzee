@@ -123,7 +123,7 @@ fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, s: State, mut f: F) {
 // state:32 is score:7 sides:6 combinations:12
 // score is in 0..85, so number of states is 85*2**18 = 22282240
 // f(action, next_state, points)
-pub fn actions<F: FnMut(Action, u32, u32)>(state: State, o: Outcome, mut f: F) {
+pub fn actions<F: FnMut(Action, State, u32)>(state: State, o: Outcome, mut f: F) {
     let score = state.score;
     for d in 0..SIDES {
         if state.has_side(d) {
@@ -138,12 +138,12 @@ pub fn actions<F: FnMut(Action, u32, u32)>(state: State, o: Outcome, mut f: F) {
             } else {
                 (score, 0)
             };
-        f(Action::Side(d), state.with_side(d).with_score(new_score).encode(), s + bonus);
+        f(Action::Side(d), state.with_side(d).with_score(new_score), s + bonus);
     }
     possible_scores(o, state, |comb, s| {
         if state.has_comb(comb) {
             return;
         }
-        f(Action::Combination(comb), state.with_comb(comb).encode(), s);
+        f(Action::Combination(comb), state.with_comb(comb), s);
     });
 }
