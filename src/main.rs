@@ -1,11 +1,8 @@
 use std::fmt;
 use std::mem;
 
-const SIDES: usize = 6;
-const DICE_COUNT: usize = 6;
-const BONUS_LIMIT: u32 = 4 * (1 + 2 + 3 + 4 + 5 + 6);
-const BONUS: u32 = 50;
-const REROLL_COUNT: usize = 2;
+mod constants;
+use constants::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Outcome {
