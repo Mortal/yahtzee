@@ -1,17 +1,52 @@
 use std::fmt;
+use std::mem;
 
 const SIDES: usize = 6;
 const DICE_COUNT: usize = 6;
 const BONUS_LIMIT: u32 = 4 * (1 + 2 + 3 + 4 + 5 + 6);
 const BONUS: u32 = 50;
+const REROLL_COUNT: usize = 2;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Outcome {
     histogram: [u8; SIDES],
 }
 
+struct OutcomePredecessorIterator<'a> {
+    outcome: &'a Outcome,
+    next: usize,
+}
+
+struct OutcomeSuccessorIterator<'a> {
+    outcome: &'a Outcome,
+    next: usize,
+}
+
 impl Outcome {
-    fn permutations(&self) -> usize {
+    fn empty() -> Self {
+        Outcome { histogram: [0; SIDES] }
+    }
+
+    fn encode(&self) -> u32 {
+        let mut r = 0;
+        let mut a = 1;
+        for d in 0..SIDES {
+            r += a * self.histogram[d] as u32;
+            a *= (DICE_COUNT + 1) as u32;
+        }
+        r
+    }
+
+    fn decode(mut v: u32) -> Self {
+        let mut histogram = [0u8; SIDES];
+        for d in 0..SIDES {
+            histogram[d] = (v % (DICE_COUNT + 1) as u32) as u8;
+            v /= (DICE_COUNT + 1) as u32;
+        }
+        Outcome { histogram: histogram }
+    }
+
+    fn multiplicity(&self) -> usize {
         let mut fac = [0; SIDES];
         fac[0] = 1;
         for i in 1..SIDES {
@@ -25,6 +60,51 @@ impl Outcome {
         }
         res
     }
+
+    fn predecessors(&self) -> OutcomePredecessorIterator {
+        OutcomePredecessorIterator {
+            outcome: self,
+            next: 0,
+        }
+    }
+
+    fn successors(&self) -> OutcomeSuccessorIterator {
+        OutcomeSuccessorIterator {
+            outcome: self,
+            next: 0,
+        }
+    }
+}
+
+impl <'a> Iterator for OutcomePredecessorIterator<'a> {
+    type Item = Outcome;
+
+    fn next(&mut self) -> Option<Outcome> {
+        while self.next < SIDES && self.outcome.histogram[self.next] == 0 {
+            self.next += 1;
+        }
+        if self.next == SIDES {
+            return None;
+        }
+        let mut histogram = self.outcome.histogram;
+        histogram[self.next] -= 1;
+        self.next += 1;
+        Some(Outcome { histogram: histogram })
+    }
+}
+
+impl <'a> Iterator for OutcomeSuccessorIterator<'a> {
+    type Item = Outcome;
+
+    fn next(&mut self) -> Option<Outcome> {
+        if self.next == SIDES {
+            return None;
+        }
+        let mut histogram = self.outcome.histogram;
+        histogram[self.next] += 1;
+        self.next += 1;
+        Some(Outcome { histogram: histogram })
+    }
 }
 
 struct OutcomeIterator {
@@ -32,11 +112,19 @@ struct OutcomeIterator {
 }
 
 impl OutcomeIterator {
-    fn new() -> Self {
+    fn new(dice_count: u8) -> Self {
         let mut h = [0; SIDES];
-        h[0] = DICE_COUNT as u8;
+        h[0] = dice_count;
         OutcomeIterator { histogram: h }
     }
+}
+
+fn outcomes() -> OutcomeIterator {
+    OutcomeIterator::new(DICE_COUNT as u8)
+}
+
+fn sub_outcomes(dice_count: usize) -> OutcomeIterator {
+    OutcomeIterator::new(dice_count as u8)
 }
 
 impl Iterator for OutcomeIterator {
@@ -104,45 +192,82 @@ impl fmt::Debug for Action {
     }
 }
 
-#[derive(Clone, Copy)]
-struct State(u32);
+#[derive(Clone, Copy, PartialEq)]
+struct State {
+    combination_mask: u16,
+    sides_mask: u8,
+    score: u32,
+}
 
 impl State {
-    fn combination_mask(&self) -> u32 {
-        self.0 & 0xFFF
+    fn decode(s: u32) -> Self {
+        let combination_mask = (s & 0xFFF) as u16;
+        let sides_mask = ((s >> 12) & 0x3F) as u8;
+        let score = s >> 18;
+        State {
+            combination_mask: combination_mask,
+            sides_mask: sides_mask,
+            score: score,
+        }
     }
 
-    fn sides_mask(&self) -> u32 {
-        (self.0 >> 12) & 0x3F
+    fn encode(&self) -> u32 {
+        (self.combination_mask as u32)
+            | ((self.sides_mask as u32) << 12)
+            | (self.score << 18)
     }
 
-    fn score(&self) -> u32 {
-        self.0 >> 18
+    fn initial() -> State {
+        State {
+            combination_mask: 0,
+            sides_mask: 0,
+            score: 0,
+        }
+    }
+
+    fn all_sides() -> State {
+        State {
+            combination_mask: 0,
+            sides_mask: 0x3F,
+            score: 0,
+        }
     }
 
     fn has_side(&self, side: usize) -> bool {
-        self.sides_mask() & (1 << side) != 0
+        self.sides_mask & (1 << side) != 0
     }
 
     fn with_side(&self, side: usize) -> State {
-        State(self.0 | (1 << (side + 12)))
+        State {
+            combination_mask: self.combination_mask,
+            sides_mask: self.sides_mask | (1 << side),
+            score: self.score,
+        }
     }
 
     fn has_comb(&self, comb: Comb) -> bool {
-        self.combination_mask() & (1 << comb) != 0
+        self.combination_mask & (1 << comb) != 0
     }
 
     fn with_comb(&self, comb: Comb) -> State {
-        State(self.0 | (1 << comb))
+        State {
+            combination_mask: self.combination_mask | (1 << comb),
+            sides_mask: self.sides_mask,
+            score: self.score,
+        }
     }
 
     fn with_score(&self, score: u32) -> State {
-        State(self.0 & (0x3FFFF) | (score << 18))
+        State {
+            combination_mask: self.combination_mask,
+            sides_mask: self.sides_mask,
+            score: score,
+        }
     }
 
     fn upper_bound_points(&self) -> u32 {
         let mut ub = 0;
-        let mut score = self.score();
+        let mut score = self.score;
         for d in 0..SIDES {
             if self.has_side(d) { continue; }
             let s = (d as u32 + 1) * (DICE_COUNT as u32);
@@ -162,19 +287,46 @@ impl State {
         if !self.has_comb(S33) { ub += 6 * SIDES as u32 - 3; }
         if !self.has_comb(R15) { ub += 1 + 2 + 3 + 4 + 5; }
         if !self.has_comb(R26) { ub += 2 + 3 + 4 + 5 + 6; }
-        if !self.has_comb(R16) { ub += 1 + 2 + 3 + 4 + 5 + 6; }
+        if !self.has_comb(R16) { ub += 30; }
         if !self.has_comb(S23) { ub += 5 * SIDES as u32 - 2; }
         if !self.has_comb(CHANCE) { ub += DICE_COUNT as u32 * SIDES as u32; }
         if !self.has_comb(YAHTZEE) { ub += 100 + DICE_COUNT as u32 * SIDES as u32; }
-        // 405+126+50 = 581
+        // 42 * 6 - 13 + 15 + 20 + 30 + 100 + 126 + 50 = 580
         ub
     }
 }
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "State(({:2} << 18) | (0x{:02x} << 12) | 0x{:03x})",
-            self.score(), self.sides_mask(), self.combination_mask())
+        write!(f, "State {{ combination_mask: 0x{:04x}, sides_mask: 0x{:02x}, score: {} }}",
+            self.combination_mask, self.sides_mask, self.score)
+    }
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut score = self.score as i32;
+        for d in 0..SIDES {
+            if self.has_side(d) {
+                write!(f, "{}", d + 1)?;
+                score -= 4 * (d as i32 + 1);
+            } else {
+                write!(f, "-")?;
+            }
+        }
+        if score >= 0 {
+            score = BONUS as i32;
+        }
+        write!(f, " {:+3} ", score)?;
+        let symbols = "PDTVQWsSCH?!";
+        for (i, c) in symbols.chars().enumerate() {
+            if self.has_comb(i) {
+                write!(f, "{}", c)?;
+            } else {
+                write!(f, "-")?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -260,21 +412,20 @@ fn score_singles<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
 
 fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, s: State, mut f: F) {
     let pairs = (1 << S2) | (1 << S22) | (1 << S222);
-    if s.0 & pairs != pairs { score_pairs(o, &mut f); }
+    if s.combination_mask & pairs != pairs { score_pairs(o, &mut f); }
     if !s.has_comb(CHANCE) { score_sum(o, &mut f); }
     if !s.has_comb(YAHTZEE) { score_yahtzee(o, &mut f); }
     let combs = (1 << S3) | (1 << S4) | (1 << S33) | (1 << S23);
-    if s.0 & combs != combs { score_combinations(o, &mut f); }
+    if s.combination_mask & combs != combs { score_combinations(o, &mut f); }
     let singles = (1 << R15) | (1 << R26) | (1 << R16);
-    if s.0 & singles != singles { score_singles(o, &mut f); }
+    if s.combination_mask & singles != singles { score_singles(o, &mut f); }
 }
 
 // state:32 is score:7 sides:6 combinations:12
 // score is in 0..85, so number of states is 85*2**18 = 22282240
 // f(action, next_state, points)
-fn actions<F: FnMut(Action, u32, u32)>(state: u32, o: Outcome, mut f: F) {
-    let state = State(state);
-    let score = state.score();
+fn actions<F: FnMut(Action, u32, u32)>(state: State, o: Outcome, mut f: F) {
+    let score = state.score;
     for d in 0..SIDES {
         if state.has_side(d) {
             continue;
@@ -288,23 +439,88 @@ fn actions<F: FnMut(Action, u32, u32)>(state: u32, o: Outcome, mut f: F) {
             } else {
                 (score, 0)
             };
-        f(Action::Side(d), state.with_side(d).with_score(new_score).0, s + bonus);
+        f(Action::Side(d), state.with_side(d).with_score(new_score).encode(), s + bonus);
     }
     possible_scores(o, state, |comb, s| {
         if state.has_comb(comb) {
             return;
         }
-        f(Action::Combination(comb), state.with_comb(comb).0, s);
+        f(Action::Combination(comb), state.with_comb(comb).encode(), s);
     });
 }
 
+fn max_outcome_encoding() -> usize {
+    outcomes().map(|o| o.encode()).max().unwrap() as usize
+}
+
 fn main() {
+    let mut state_value = vec![0.0; 0x1000];
+    let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];
+    let mut best_subset_value = vec![0.0; max_outcome_encoding() + 1];
+    for i in (0..0x0fff).rev() {
+        let s = State { combination_mask: i as u16, sides_mask: 0x3F, score: BONUS_LIMIT };
+        // Compute value of each outcome
+        for o in outcomes() {
+            let mut best = 0f64;
+            actions(s, o, |_action, next_state, points| {
+                best = best.max(state_value[State::decode(next_state).combination_mask as usize] + points as f64);
+            });
+            outcome_value[o.encode() as usize] = best;
+        }
+
+        for _ in 0..REROLL_COUNT {
+            // Compute expected value when keeping a subset
+            for n in (1..DICE_COUNT).rev() {
+                for o in sub_outcomes(n) {
+                    let i = o.encode() as usize;
+                    outcome_value[i] = 0.0;
+                    for s in o.successors() {
+                        outcome_value[i] += outcome_value[s.encode() as usize];
+                    }
+                    outcome_value[i] /= SIDES as f64;
+                }
+            }
+            outcome_value[0] = 0.0;
+            for s in Outcome::empty().successors() {
+                let i = s.encode() as usize;
+                outcome_value[0] += outcome_value[i];
+            }
+            outcome_value[0] /= SIDES as f64;
+
+            // Compute best expected value when keeping a subset
+            best_subset_value[0] = outcome_value[0];
+            for n in 1..(DICE_COUNT + 1) {
+                for o in sub_outcomes(n) {
+                    let i = o.encode() as usize;
+                    best_subset_value[i] = outcome_value[i];
+                    for p in o.predecessors() {
+                        best_subset_value[i] = best_subset_value[i].max(best_subset_value[p.encode() as usize]);
+                    }
+                }
+            }
+            mem::swap(&mut outcome_value, &mut best_subset_value);
+        }
+
+        let mut numerator = 0.0;
+        let mut denominator = 0;
+        for o in outcomes() {
+            let i = o.encode() as usize;
+            let m = o.multiplicity();
+            numerator += m as f64 * outcome_value[i];
+            denominator += m;
+        }
+        state_value[i] = numerator / denominator as f64;
+        println!("{} {}", s, state_value[i]);
+    }
+}
+
+fn best_final_roll() {
     for i in 0..18 {
-        let s = 0x3FFFF & !(1 << i);
+        let s = State::decode(0x3FFFF & !(1 << i));
         let mut best_action = Action::Side(SIDES);
         let mut best_points = 0;
         let mut best_outcome = None;
-        for o in OutcomeIterator::new() {
+        for o in outcomes() {
             actions(s, o, |action, _next_state, points| {
                 if points > best_points {
                     best_action = action;
@@ -313,7 +529,7 @@ fn main() {
                 }
             });
         }
-        println!("{} {:?} {} {:?}", i, best_action, best_points, best_outcome);
+        println!("{} {:?} {:?} {} {:?}", i, s, best_action, best_points, best_outcome);
     }
 }
 
@@ -326,8 +542,9 @@ fn print_reachable() {
             skipped += 1;
             continue;
         }
-        for o in OutcomeIterator::new() {
-            actions(i as u32, o, |_action, next_state, _points| {
+        let s = State::decode(i as u32);
+        for o in outcomes() {
+            actions(s, o, |_action, next_state, _points| {
                 let next_state = next_state as usize;
                 assert!(next_state > i);
                 reachable[next_state] = 1;
@@ -348,23 +565,24 @@ fn iter_all() {
             continue;
         }
         if i % 10000 == 0 {
-            println!("{:7} {:3} {:?}", skipped, best_score[i], State(i as u32));
+            println!("{:7} {:3} {:?}", skipped, best_score[i], State::decode(i as u32));
         }
-        let ub = best_score[i] + State(i as u32).upper_bound_points() as u16;
+        let ub = best_score[i] + State::decode(i as u32).upper_bound_points() as u16;
         best_so_far = best_so_far.max(best_score[i]);
         let mut ub_correct = false;
-        for o in OutcomeIterator::new() {
-            actions(i as u32, o, |action, next_state, points| {
+        let s = State::decode(i as u32);
+        for o in outcomes() {
+            actions(s, o, |action, next_state, points| {
                 let s = best_score[i] + points as u16;
-                let ub2 = s + State(next_state).upper_bound_points() as u16;
+                let ub2 = s + State::decode(next_state).upper_bound_points() as u16;
                 if ub2 > ub {
                     println!("{:?} with {:?} {:?} => {:?}, {} + {} + {} = {} > {}",
-                             State(i as u32),
+                             State::decode(i as u32),
                              o, action,
-                             State(next_state),
+                             State::decode(next_state),
                              best_score[i],
                              points,
-                             State(next_state).upper_bound_points(),
+                             State::decode(next_state).upper_bound_points(),
                              ub2, ub);
                 }
                 assert!(ub2 <= ub);
@@ -381,8 +599,51 @@ fn iter_all() {
             });
         }
         if !ub_correct {
-            println!("TEST {:3} {:3} {:?}", best_score[i], ub, State(i as u32));
+            println!("TEST {:3} {:3} {:?}", best_score[i], ub, State::decode(i as u32));
         }
     }
     println!("Skipped: {}", skipped);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_successors() {
+        assert_eq!(Outcome::empty().successors().map(|o| o.histogram).collect::<Vec<_>>(),
+        vec![[1,0,0,0,0,0],[0,1,0,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1]]);
+    }
+
+    #[test]
+    fn simple_predecessors() {
+        let o = Outcome {histogram: [0, 0, 6, 0, 0, 0]};
+        assert_eq!(o.predecessors().map(|o| o.histogram).collect::<Vec<_>>(),
+        vec![[0,0,5,0,0,0]]);
+    }
+
+    #[test]
+    fn outcome_encode_decode() {
+        for o in outcomes() {
+            assert_eq!(o, Outcome::decode(o.encode()));
+        }
+    }
+
+    #[test]
+    fn state_encode_decode() {
+        for i in 0..2228 {
+            let s = State::decode(i * 1000);
+            assert_eq!(s, State::decode(s.encode()));
+        }
+    }
+
+    #[test]
+    fn state_initial_encode() {
+        assert_eq!(State::initial().encode(), 0);
+    }
+
+    #[test]
+    fn state_initial_upper_bound() {
+        assert_eq!(State::initial().upper_bound_points(), 580);
+    }
 }
