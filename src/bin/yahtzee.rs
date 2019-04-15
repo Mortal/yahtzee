@@ -55,17 +55,35 @@ impl Reroll {
     }
 }
 
+fn expectation_over_outcomes(outcome_value: &Vec<f64>) -> f64 {
+    let mut numerator = 0.0;
+    let mut denominator = 0;
+    for o in outcomes() {
+        let i = o.encode() as usize;
+        let m = o.multiplicity();
+        numerator += m as f64 * outcome_value[i];
+        denominator += m;
+    }
+    numerator / denominator as f64
+}
+
 fn main() {
     let mut state_value = vec![0.0; 0x1000];
     let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];
     let mut reroll = Reroll::new();
     for i in (0..0x0fff).rev() {
-        let s = State { combination_mask: i as u16, sides_mask: 0x3F, score: BONUS_LIMIT };
+        let s = State {
+            combination_mask: i as u16,
+            sides_mask: 0x3F,
+            score: BONUS_LIMIT,
+        };
         // Compute value of each outcome
         for o in outcomes() {
             let mut best = 0f64;
             actions(s, o, |_action, next_state, points| {
-                best = best.max(state_value[State::decode(next_state).combination_mask as usize] + points as f64);
+                let i = State::decode(next_state).combination_mask as usize;
+                let value = state_value[i] + points as f64;
+                best = best.max(value);
             });
             outcome_value[o.encode() as usize] = best;
         }
@@ -74,15 +92,7 @@ fn main() {
             reroll.reroll(&mut outcome_value);
         }
 
-        let mut numerator = 0.0;
-        let mut denominator = 0;
-        for o in outcomes() {
-            let i = o.encode() as usize;
-            let m = o.multiplicity();
-            numerator += m as f64 * outcome_value[i];
-            denominator += m;
-        }
-        state_value[i] = numerator / denominator as f64;
+        state_value[i] = expectation_over_outcomes(&outcome_value);
         println!("{} {}", s, state_value[i]);
     }
 }
