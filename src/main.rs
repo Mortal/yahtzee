@@ -104,19 +104,7 @@ impl fmt::Debug for Action {
     }
 }
 
-fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
-    // 1 pair
-    // 2 pairs
-    // 3 pairs
-    // 3 of a kind
-    // 4 of a kind
-    // 2x 3 of a kind
-    // 1-5 (15)
-    // 2-6 (20)
-    // 1-6 (30)
-    // S23
-    // Chance
-    // Yatzy (100 + dice sum)
+fn score_pairs<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
     let mut pair_sum = 0u32;
     let mut pairs = 0;
     let pair_scores = [S2, S22, S222];
@@ -130,18 +118,32 @@ fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
     for i in pairs..3 {
         f(pair_scores[i], 0);
     }
+}
+
+fn score_sum<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut sum = 0;
+    for d in (0..SIDES).rev() {
+        sum += (d as u32 + 1) * (o.histogram[d] as u32);
+    }
+    f(CHANCE, sum);
+}
+
+fn score_yahtzee<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut s6 = 0;
+    for d in (0..SIDES).rev() {
+        if o.histogram[d] == 6 {
+            s6 = d as u32 + 1;
+        }
+    }
+    f(YAHTZEE, if s6 > 0 { 100 + 6 * s6 } else { 0 });
+}
+
+fn score_combinations<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
     let mut s2 = 0;
     let mut s3 = 0;
     let mut s4 = 0;
     let mut s33 = 0;
-    let mut singles = 0;
-    let mut sum = 0;
-    let mut s6 = 0;
     for d in (0..SIDES).rev() {
-        sum += (d as u32 + 1) * (o.histogram[d] as u32);
-        if o.histogram[d] == 6 {
-            s6 = d as u32 + 1;
-        }
         if o.histogram[d] >= 4 {
             s2 = s2.max(s3);
             s3 = d as u32 + 1;
@@ -152,14 +154,22 @@ fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
             s3 = d as u32 + 1;
         } else if o.histogram[d] == 2 {
             s2 = d as u32 + 1;
-        } else if o.histogram[d] == 1 {
-            singles += 1;
         }
     }
     f(S4, 4 * s4);
     f(S3, 3 * s3);
     f(S2, 2 * s2);
     f(S33, if s33 > 0 { 3 * (s33 + s3) } else { 0 });
+    f(S23, if s2 > 0 && s3 > 0 { s2 * 2 + s3 * 3 } else { 0 });
+}
+
+fn score_singles<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut singles = 0;
+    for d in (0..SIDES).rev() {
+        if o.histogram[d] == 1 {
+            singles += 1;
+        }
+    }
     if singles == 6 {
         f(R15, 15);
         f(R26, 21);
@@ -173,9 +183,14 @@ fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
         f(R26, 0);
         f(R16, 0);
     }
-    f(S23, if s2 > 0 && s3 > 0 { s2 * 2 + s3 * 3 } else { 0 });
-    f(CHANCE, sum);
-    f(YAHTZEE, if s6 > 0 { 100 + 6 * s6 } else { 0 });
+}
+
+fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
+    score_pairs(o, &mut f);
+    score_sum(o, &mut f);
+    score_yahtzee(o, &mut f);
+    score_combinations(o, &mut f);
+    score_singles(o, &mut f);
 }
 
 struct State(u32);
@@ -290,7 +305,7 @@ fn main() {
             continue;
         }
         for o in OutcomeIterator::new() {
-            actions(i as u32, o, |action, next_state, points| {
+            actions(i as u32, o, |_action, next_state, _points| {
                 let next_state = next_state as usize;
                 assert!(next_state > i);
                 reachable[next_state] = 1;
