@@ -104,95 +104,7 @@ impl fmt::Debug for Action {
     }
 }
 
-fn score_pairs<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
-    let mut pair_sum = 0u32;
-    let mut pairs = 0;
-    let pair_scores = [S2, S22, S222];
-    for d in (0..SIDES).rev() {
-        if o.histogram[d] >= 2 {
-            pair_sum += (d as u32 + 1) * 2;
-            f(pair_scores[pairs], pair_sum);
-            pairs += 1;
-        }
-    }
-    for i in pairs..3 {
-        f(pair_scores[i], 0);
-    }
-}
-
-fn score_sum<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
-    let mut sum = 0;
-    for d in (0..SIDES).rev() {
-        sum += (d as u32 + 1) * (o.histogram[d] as u32);
-    }
-    f(CHANCE, sum);
-}
-
-fn score_yahtzee<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
-    let mut s6 = 0;
-    for d in (0..SIDES).rev() {
-        if o.histogram[d] == 6 {
-            s6 = d as u32 + 1;
-        }
-    }
-    f(YAHTZEE, if s6 > 0 { 100 + 6 * s6 } else { 0 });
-}
-
-fn score_combinations<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
-    let mut s2 = 0;
-    let mut s3 = 0;
-    let mut s4 = 0;
-    let mut s33 = 0;
-    for d in (0..SIDES).rev() {
-        if o.histogram[d] >= 4 {
-            s2 = s2.max(s3);
-            s3 = d as u32 + 1;
-            s4 = s3;
-        } else if o.histogram[d] == 3 {
-            s2 = s2.max(s3);
-            s33 = s33.max(s3);
-            s3 = d as u32 + 1;
-        } else if o.histogram[d] == 2 {
-            s2 = d as u32 + 1;
-        }
-    }
-    f(S4, 4 * s4);
-    f(S3, 3 * s3);
-    f(S2, 2 * s2);
-    f(S33, if s33 > 0 { 3 * (s33 + s3) } else { 0 });
-    f(S23, if s2 > 0 && s3 > 0 { s2 * 2 + s3 * 3 } else { 0 });
-}
-
-fn score_singles<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
-    let mut singles = 0;
-    for d in (0..SIDES).rev() {
-        if o.histogram[d] == 1 {
-            singles += 1;
-        }
-    }
-    if singles == 6 {
-        f(R15, 15);
-        f(R26, 21);
-        f(R16, 30);
-    } else if singles == 4 && o.histogram[0] == 0 {
-        f(R15, 0);
-        f(R26, 21);
-        f(R16, 0);
-    } else if singles == 4 && o.histogram[5] == 0 {
-        f(R15, 15);
-        f(R26, 0);
-        f(R16, 0);
-    }
-}
-
-fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, mut f: F) {
-    score_pairs(o, &mut f);
-    score_sum(o, &mut f);
-    score_yahtzee(o, &mut f);
-    score_combinations(o, &mut f);
-    score_singles(o, &mut f);
-}
-
+#[derive(Clone, Copy)]
 struct State(u32);
 
 impl State {
@@ -266,6 +178,97 @@ impl fmt::Debug for State {
     }
 }
 
+fn score_pairs<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut pair_sum = 0u32;
+    let mut pairs = 0;
+    let pair_scores = [S2, S22, S222];
+    for d in (0..SIDES).rev() {
+        if o.histogram[d] >= 2 {
+            pair_sum += (d as u32 + 1) * 2;
+            f(pair_scores[pairs], pair_sum);
+            pairs += 1;
+        }
+    }
+    for i in pairs..3 {
+        f(pair_scores[i], 0);
+    }
+}
+
+fn score_sum<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut sum = 0;
+    for d in (0..SIDES).rev() {
+        sum += (d as u32 + 1) * (o.histogram[d] as u32);
+    }
+    f(CHANCE, sum);
+}
+
+fn score_yahtzee<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut s6 = 0;
+    for d in (0..SIDES).rev() {
+        if o.histogram[d] == 6 {
+            s6 = d as u32 + 1;
+        }
+    }
+    f(YAHTZEE, if s6 > 0 { 100 + 6 * s6 } else { 0 });
+}
+
+fn score_combinations<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut s2 = 0;
+    let mut s3 = 0;
+    let mut s4 = 0;
+    let mut s33 = 0;
+    for d in (0..SIDES).rev() {
+        if o.histogram[d] >= 4 {
+            s2 = s2.max(s3);
+            s3 = d as u32 + 1;
+            s4 = s3;
+        } else if o.histogram[d] == 3 {
+            s2 = s2.max(s3);
+            s33 = s33.max(s3);
+            s3 = d as u32 + 1;
+        } else if o.histogram[d] == 2 {
+            s2 = d as u32 + 1;
+        }
+    }
+    f(S4, 4 * s4);
+    f(S3, 3 * s3);
+    f(S33, if s33 > 0 { 3 * (s33 + s3) } else { 0 });
+    f(S23, if s2 > 0 && s3 > 0 { s2 * 2 + s3 * 3 } else { 0 });
+}
+
+fn score_singles<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
+    let mut singles = 0;
+    for d in (0..SIDES).rev() {
+        if o.histogram[d] == 1 {
+            singles += 1;
+        }
+    }
+    if singles == 6 {
+        f(R15, 15);
+        f(R26, 21);
+        f(R16, 30);
+    } else if singles == 4 && o.histogram[0] == 0 {
+        f(R15, 0);
+        f(R26, 21);
+        f(R16, 0);
+    } else if singles == 4 && o.histogram[5] == 0 {
+        f(R15, 15);
+        f(R26, 0);
+        f(R16, 0);
+    }
+}
+
+fn possible_scores<F: FnMut(Comb, u32)>(o: Outcome, s: State, mut f: F) {
+    let pairs = (1 << S2) | (1 << S22) | (1 << S222);
+    if s.0 & pairs != pairs { score_pairs(o, &mut f); }
+    if !s.has_comb(CHANCE) { score_sum(o, &mut f); }
+    if !s.has_comb(YAHTZEE) { score_yahtzee(o, &mut f); }
+    let combs = (1 << S3) | (1 << S4) | (1 << S33) | (1 << S23);
+    if s.0 & combs != combs { score_combinations(o, &mut f); }
+    let singles = (1 << R15) | (1 << R26) | (1 << R16);
+    if s.0 & singles != singles { score_singles(o, &mut f); }
+}
+
 // state:32 is score:7 sides:6 combinations:12
 // score is in 0..85, so number of states is 85*2**18 = 22282240
 // f(action, next_state, points)
@@ -287,7 +290,7 @@ fn actions<F: FnMut(Action, u32, u32)>(state: u32, o: Outcome, mut f: F) {
             };
         f(Action::Side(d), state.with_side(d).with_score(new_score).0, s + bonus);
     }
-    possible_scores(o, |comb, s| {
+    possible_scores(o, state, |comb, s| {
         if state.has_comb(comb) {
             return;
         }
@@ -296,6 +299,25 @@ fn actions<F: FnMut(Action, u32, u32)>(state: u32, o: Outcome, mut f: F) {
 }
 
 fn main() {
+    for i in 0..18 {
+        let s = 0x3FFFF & !(1 << i);
+        let mut best_action = Action::Side(SIDES);
+        let mut best_points = 0;
+        let mut best_outcome = None;
+        for o in OutcomeIterator::new() {
+            actions(s, o, |action, _next_state, points| {
+                if points > best_points {
+                    best_action = action;
+                    best_points = points;
+                    best_outcome = Some(o);
+                }
+            });
+        }
+        println!("{} {:?} {} {:?}", i, best_action, best_points, best_outcome);
+    }
+}
+
+fn print_reachable() {
     let mut reachable = vec![0u8; (1 + BONUS_LIMIT as usize) << 18];
     reachable[0] = 1;
     let mut skipped = 0;
