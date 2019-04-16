@@ -40,7 +40,6 @@ fn reroll(outcome_value: &mut Vec<f64>, best_subset_value: &mut Vec<f64>) {
             }
         }
     }
-    mem::swap(outcome_value, best_subset_value);
 }
 
 fn expectation_over_outcomes(outcome_value: &Vec<f64>) -> f64 {
