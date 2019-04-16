@@ -33,10 +33,10 @@ fn main() {
         let mut points = 0;
         let mut state = State {
             combination_mask: 0,
-            sides_mask: 0x3F,
-            score: BONUS_LIMIT,
+            sides_mask: 0,
+            score: 0,
         };
-        while state.combination_mask != 0xFFF {
+        while !state.done() {
             let mut outcome = random_outcome(&mut rng);
             print!("{:3} {} Roll {}", points, state, outcome);
             compute_outcome_values(state, &state_value, &mut outcome_value);

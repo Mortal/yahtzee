@@ -96,16 +96,13 @@ fn expectation_over_outcomes(outcome_value: &Vec<f64>) -> f64 {
     numerator / denominator as f64
 }
 
-pub fn compute_state_value() -> Vec<f64> {
-    let mut state_value = vec![0.0; 0x1000];
+pub fn compute_state_value<F: FnMut(usize, usize)>(mut pi: F) -> Vec<f64> {
+    let states = (1 + BONUS_LIMIT as usize) << 18;
+    let mut state_value = vec![0.0; states];
     let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];
     let mut best_subset_value = Vec::new();
-    for i in (0..0x0fff).rev() {
-        let s = State {
-            combination_mask: i as u16,
-            sides_mask: 0x3F,
-            score: BONUS_LIMIT,
-        };
+    for i in (0..states).rev() {
+        let s = State::decode(i as u32);
         compute_outcome_values(s, &state_value, &mut outcome_value);
         compute_subset_expectations(&mut outcome_value);
 
@@ -116,6 +113,9 @@ pub fn compute_state_value() -> Vec<f64> {
         }
 
         state_value[i] = expectation_over_outcomes(&outcome_value);
+        if (states - i) % (1 << 10) == 0 {
+            pi(states - i, states);
+        }
     }
     state_value
 }

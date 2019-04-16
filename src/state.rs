@@ -42,6 +42,10 @@ impl State {
         }
     }
 
+    pub fn done(&self) -> bool {
+        self.combination_mask == 0xFFF && self.sides_mask == 0x3F
+    }
+
     pub fn has_side(&self, side: usize) -> bool {
         self.sides_mask & (1 << side) != 0
     }
