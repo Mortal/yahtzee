@@ -15,6 +15,9 @@ fn main() {
         // 8 dots in a cluster, 32 dots in a line, BONUS_LIMIT lines
         // each line represents 2**18
         // each dot represents 2**13
+        if i == 0 {
+            eprintln!("Compute value of {} states", n);
+        }
         if i != n && (i == 0 || i % (1 << 13) != 0) {
             return;
         }

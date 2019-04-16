@@ -98,6 +98,7 @@ fn expectation_over_outcomes(outcome_value: &Vec<f64>) -> f64 {
 
 pub fn compute_state_value<F: FnMut(usize, usize)>(mut pi: F) -> Vec<f64> {
     let states = (1 + BONUS_LIMIT as usize) << (SIDES + COMB_COUNT);
+    pi(0, states);
     let mut state_value = vec![11111111111.0; states];
     let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];
     let mut best_subset_value = Vec::new();
