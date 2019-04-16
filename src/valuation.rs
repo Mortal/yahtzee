@@ -7,7 +7,7 @@ pub fn compute_outcome_values(state: State, state_value: &Vec<f64>, outcome_valu
     for o in outcomes() {
         let mut best = 0f64;
         actions(state, o, |_action, next_state, points| {
-            let i = next_state.combination_mask as usize;
+            let i = next_state.encode() as usize;
             let value = state_value[i] + points as f64;
             best = best.max(value);
         });

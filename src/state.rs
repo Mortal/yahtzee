@@ -107,6 +107,13 @@ impl State {
         // 42 * 6 - 13 + 15 + 20 + 30 + 100 + 126 + 50 = 580
         ub
     }
+
+    pub fn display_score(&self, mut points: u32) -> u32 {
+        for d in 0..SIDES {
+            if self.has_side(d) { points -= 4 * (1 + d as u32); }
+        }
+        points
+    }
 }
 
 impl fmt::Debug for State {
@@ -119,15 +126,17 @@ impl fmt::Debug for State {
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut score = self.score as i32;
+        let mut has_all = true;
         for d in 0..SIDES {
             if self.has_side(d) {
                 write!(f, "{}", d + 1)?;
                 score -= 4 * (d as i32 + 1);
             } else {
                 write!(f, "-")?;
+                has_all = false;
             }
         }
-        if score >= 0 {
+        if score >= 0 && has_all {
             score = BONUS as i32;
         }
         write!(f, " {:+3} ", score)?;

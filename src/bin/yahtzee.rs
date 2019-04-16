@@ -1,4 +1,8 @@
 extern crate rand;
+extern crate byteorder;
+
+use std::{io, fs};
+use byteorder::{LittleEndian, ReadBytesExt};
 
 extern crate yahtzee;
 use yahtzee::*;
@@ -24,8 +28,20 @@ fn random_reroll<R: rand::Rng>(rng: &mut R, outcome: &mut Outcome) {
     }
 }
 
+fn read_state_value() -> io::Result<Vec<f64>> {
+    let file = fs::File::open("state_value.bin")?;
+    let size = file.metadata()?.len() as usize;
+    let mut reader = io::BufReader::new(file);
+    let mut state_value = vec![0f64; size / 8];
+    for x in state_value.iter_mut() {
+        *x = reader.read_f64::<LittleEndian>()?;
+    }
+    Ok(state_value)
+}
+
 fn main() {
-    let state_value = compute_state_value();
+    let state_value = read_state_value().expect("Failed to read state value");
+    println!("Expected score: {}", state_value[0] - BONUS_LIMIT as f64);
     let mut rng = rand::thread_rng();
     let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];
     let mut reroll_value = vec![0.0; outcome_value.len()];
@@ -38,7 +54,7 @@ fn main() {
         };
         while !state.done() {
             let mut outcome = random_outcome(&mut rng);
-            print!("{:3} {} Roll {}", points, state, outcome);
+            print!("{:3} {} Roll {}", state.display_score(points), state, outcome);
             compute_outcome_values(state, &state_value, &mut outcome_value);
             compute_subset_expectations(&mut outcome_value);
             compute_reroll_value(&outcome_value, &mut reroll_value);
@@ -59,7 +75,7 @@ fn main() {
             let mut action_count = 0;
             actions(state, outcome, |action, next_state, points| {
                 action_count += 1;
-                let i = next_state.combination_mask as usize;
+                let i = next_state.encode() as usize;
                 let value = state_value[i] + points as f64;
                 if value > best {
                     best = value;
@@ -69,10 +85,10 @@ fn main() {
                 }
             });
             assert!(action_count > 0);
-            println!(", {:3} points (exp.: {:.4})", best_points, points as f64 + best);
+            println!(", {} => {:3} points (exp.: {:.4})", best_action.unwrap(), best_points, points as f64 + best - BONUS_LIMIT as f64);
             state = best_state.unwrap();
             points += best_points;
         }
-        println!("");
+        println!("\n");
     }
 }

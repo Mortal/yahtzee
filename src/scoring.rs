@@ -29,6 +29,16 @@ impl fmt::Debug for Action {
     }
 }
 
+impl fmt::Display for Action {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let symbols = b"PDTVQWsSCH?!";
+        match self {
+            &Action::Combination(n) => write!(fmt, "{}", symbols[n] as char),
+            &Action::Side(s) => write!(fmt, "{}", s + 1),
+        }
+    }
+}
+
 fn score_pairs<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
     let mut pair_sum = 0u32;
     let mut pairs = 0;
