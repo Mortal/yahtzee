@@ -1,3 +1,5 @@
+//! Compute expected value for the optimal strategy in every state of
+//! Super Yahtzee. Takes between 100 and 140 minutes to compute.
 extern crate yahtzee;
 extern crate byteorder;
 
