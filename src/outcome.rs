@@ -82,6 +82,10 @@ impl fmt::Display for Outcome {
     }
 }
 
+pub fn max_outcome_encoding() -> usize {
+    outcomes().map(|o| o.encode()).max().unwrap() as usize
+}
+
 impl <'a> Iterator for OutcomePredecessorIterator<'a> {
     type Item = Outcome;
 

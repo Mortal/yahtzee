@@ -1,13 +1,16 @@
 pub mod constants;
 
 mod outcome;
-pub use outcome::{Outcome, outcomes, sub_outcomes};
+pub use outcome::{Outcome, outcomes, sub_outcomes, max_outcome_encoding};
 
 mod state;
 pub use state::State;
 
 mod scoring;
 pub use scoring::{Action, actions};
+
+mod valuation;
+pub use valuation::{compute_state_value, compute_outcome_values, compute_subset_expectations, compute_reroll_value, choose_reroll};
 
 #[cfg(test)]
 mod tests {
