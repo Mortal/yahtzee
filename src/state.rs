@@ -152,3 +152,21 @@ impl fmt::Display for State {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    use crate::constants::*;
+    #[test]
+    fn state_roundtrip() {
+        let states = (1 + BONUS_LIMIT as usize) << (SIDES + COMB_COUNT);
+        assert!(states > 10);
+        for i in 0..states {
+            let s = State::decode(i as u32);
+            let j = s.encode();
+            let r = State::decode(j);
+            assert_eq!(s, r);
+            assert_eq!(i, j as usize);
+        }
+    }
+}
