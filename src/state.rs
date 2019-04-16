@@ -114,9 +114,10 @@ impl State {
         ub
     }
 
-    pub fn display_score(&self, mut points: u32) -> u32 {
+    pub fn display_score(&self, points: u32) -> i32 {
+        let mut points = points as i32;
         for d in 0..SIDES {
-            if self.has_side(d) { points -= BONUS_COUNT * (1 + d as u32); }
+            if self.has_side(d) { points -= BONUS_COUNT as i32 * (1 + d as i32); }
         }
         points
     }
