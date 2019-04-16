@@ -39,8 +39,28 @@ fn read_state_value() -> io::Result<Vec<f64>> {
     Ok(state_value)
 }
 
+fn test_state_value(state_value: &Vec<f64>) {
+    let s1 = State::initial().with_side(0).with_score(5);
+    let s2 = State::initial().with_comb(S33);
+    let e1 = state_value[s1.encode() as usize] + 5.0;
+    let e2 = state_value[s2.encode() as usize];
+    println!("For 5 1's, scratching 2x3 has expectation {}, taking the 1's has expectation {}", e2, e1);
+    if e2 > e1 {
+        for d in 0..SIDES {
+            for c in 0..DICE_COUNT + 1 {
+                let score = c as u32 * (1 + d) as u32;
+                let s = State::initial().with_side(d).with_score(score);
+                let e = state_value[s.encode() as usize] + score as f64;
+                println!("Keeping {} {}'s => {}", c, d + 1, e);
+            }
+        }
+        panic!("Wrong expectation");
+    }
+}
+
 fn main() {
     let state_value = read_state_value().expect("Failed to read state value");
+    test_state_value(&state_value);
     println!("Expected score: {}", state_value[0] - BONUS_LIMIT as f64);
     let mut rng = rand::thread_rng();
     let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];

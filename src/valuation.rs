@@ -98,7 +98,7 @@ fn expectation_over_outcomes(outcome_value: &Vec<f64>) -> f64 {
 
 pub fn compute_state_value<F: FnMut(usize, usize)>(mut pi: F) -> Vec<f64> {
     let states = (1 + BONUS_LIMIT as usize) << 18;
-    let mut state_value = vec![0.0; states];
+    let mut state_value = vec![11111111111.0; states];
     let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];
     let mut best_subset_value = Vec::new();
     for i in (0..states).rev() {
@@ -113,6 +113,9 @@ pub fn compute_state_value<F: FnMut(usize, usize)>(mut pi: F) -> Vec<f64> {
         }
 
         state_value[i] = expectation_over_outcomes(&outcome_value);
+        if state_value[i] > 1000.0 {
+            panic!("State {} got expectation {}", s, state_value[i]);
+        }
         if (states - i) % (1 << 10) == 0 {
             pi(states - i, states);
         }
