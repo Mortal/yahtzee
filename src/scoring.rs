@@ -66,11 +66,11 @@ fn score_sum<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
 fn score_yahtzee<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
     let mut s6 = 0;
     for d in (0..SIDES).rev() {
-        if o.histogram[d] == 6 {
+        if o.histogram[d] == DICE_COUNT as u8 {
             s6 = d as u32 + 1;
         }
     }
-    f(YAHTZEE, if s6 > 0 { 100 + 6 * s6 } else { 0 });
+    f(YAHTZEE, if s6 > 0 { 100 + DICE_COUNT as u32 * s6 } else { 0 });
 }
 
 fn score_combinations<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
