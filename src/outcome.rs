@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::constants::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -66,6 +68,17 @@ impl Outcome {
             outcome: self,
             next: 0,
         }
+    }
+}
+
+impl fmt::Display for Outcome {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for i in 0..self.histogram.len() {
+            for _ in 0..self.histogram[i] {
+                write!(f, "{}", i + 1)?;
+            }
+        }
+        Ok(())
     }
 }
 

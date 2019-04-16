@@ -106,6 +106,10 @@ fn score_singles<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
         f(R15, 15);
         f(R26, 0);
         f(R16, 0);
+    } else {
+        f(R15, 0);
+        f(R26, 0);
+        f(R16, 0);
     }
 }
 
