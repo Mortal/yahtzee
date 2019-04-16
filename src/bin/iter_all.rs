@@ -22,22 +22,22 @@ fn main() {
         for o in outcomes() {
             actions(s, o, |action, next_state, points| {
                 let s = best_score[i] + points as u16;
-                let ub2 = s + State::decode(next_state).upper_bound_points() as u16;
+                let ub2 = s + next_state.upper_bound_points() as u16;
                 if ub2 > ub {
                     println!("{:?} with {:?} {:?} => {:?}, {} + {} + {} = {} > {}",
                              State::decode(i as u32),
                              o, action,
-                             State::decode(next_state),
+                             next_state,
                              best_score[i],
                              points,
-                             State::decode(next_state).upper_bound_points(),
+                             next_state.upper_bound_points(),
                              ub2, ub);
                 }
                 assert!(ub2 <= ub);
                 if ub == ub2 {
                     ub_correct = true;
                 }
-                let next_state = next_state as usize;
+                let next_state = next_state.encode() as usize;
                 assert!(next_state > i);
                 if best_score[next_state] == 0xFFFF {
                     best_score[next_state] = s;

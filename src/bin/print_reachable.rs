@@ -14,7 +14,7 @@ fn main() {
         let s = State::decode(i as u32);
         for o in outcomes() {
             actions(s, o, |_action, next_state, _points| {
-                let next_state = next_state as usize;
+                let next_state = next_state.encode() as usize;
                 assert!(next_state > i);
                 reachable[next_state] = 1;
             });
