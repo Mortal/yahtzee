@@ -13,6 +13,7 @@ impl State {
         let combination_mask = s as u16 & COMB_MASK;
         let sides_mask = (s >> COMB_COUNT) as u8 & SIDES_MASK;
         let score = s >> (COMB_COUNT + SIDES);
+        assert!(score <= BONUS_LIMIT);
         State {
             combination_mask: combination_mask,
             sides_mask: sides_mask,
