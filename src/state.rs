@@ -13,7 +13,7 @@ impl State {
         let combination_mask = s as u16 & COMB_MASK;
         let sides_mask = (s >> COMB_COUNT) as u8 & SIDES_MASK;
         let score = s >> (COMB_COUNT + SIDES);
-        assert!(score <= BONUS_LIMIT);
+        debug_assert!(score <= BONUS_LIMIT);
         State {
             combination_mask: combination_mask,
             sides_mask: sides_mask,
@@ -48,10 +48,12 @@ impl State {
     }
 
     pub fn has_side(&self, side: usize) -> bool {
+        debug_assert!(side < SIDES);
         self.sides_mask & (1 << side) != 0
     }
 
     pub fn with_side(&self, side: usize) -> State {
+        debug_assert!(side < SIDES);
         State {
             combination_mask: self.combination_mask,
             sides_mask: self.sides_mask | (1 << side),
@@ -60,10 +62,12 @@ impl State {
     }
 
     pub fn has_comb(&self, comb: Comb) -> bool {
+        debug_assert!(comb < COMB_COUNT);
         self.combination_mask & (1 << comb) != 0
     }
 
     pub fn with_comb(&self, comb: Comb) -> State {
+        debug_assert!(comb < COMB_COUNT);
         State {
             combination_mask: self.combination_mask | (1 << comb),
             sides_mask: self.sides_mask,
@@ -72,6 +76,7 @@ impl State {
     }
 
     pub fn with_score(&self, score: u32) -> State {
+        debug_assert!(score <= BONUS_LIMIT);
         State {
             combination_mask: self.combination_mask,
             sides_mask: self.sides_mask,
