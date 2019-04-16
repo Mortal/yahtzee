@@ -1,8 +1,11 @@
 pub const SIDES: usize = 6;
 pub const DICE_COUNT: usize = 6;
-pub const BONUS_LIMIT: u32 = 4 * (1 + 2 + 3 + 4 + 5 + 6);
+pub const BONUS_COUNT: u32 = 4;
+pub const BONUS_LIMIT: u32 = BONUS_COUNT * (SIDES * (SIDES + 1) / 2) as u32;
 pub const BONUS: u32 = 50;
 pub const REROLL_COUNT: usize = 2;
+
+pub const SIDES_MASK: u8 = (1 << SIDES) - 1;
 
 pub type Comb = usize;
 
@@ -18,3 +21,5 @@ pub const R16: Comb = 8;
 pub const S23: Comb = 9;
 pub const CHANCE: Comb = 10;
 pub const YAHTZEE: Comb = 11;
+pub const COMB_COUNT: Comb = 12;
+pub const COMB_MASK: u16 = (1 << COMB_COUNT) - 1;

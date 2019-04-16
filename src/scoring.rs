@@ -50,7 +50,7 @@ fn score_pairs<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
             pairs += 1;
         }
     }
-    for i in pairs..3 {
+    for i in pairs..pair_scores.len() {
         f(pair_scores[i], 0);
     }
 }

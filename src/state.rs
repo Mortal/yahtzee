@@ -10,9 +10,9 @@ pub struct State {
 
 impl State {
     pub fn decode(s: u32) -> Self {
-        let combination_mask = (s & 0xFFF) as u16;
-        let sides_mask = ((s >> 12) & 0x3F) as u8;
-        let score = s >> 18;
+        let combination_mask = s as u16 & COMB_MASK;
+        let sides_mask = (s >> COMB_COUNT) as u8 & SIDES_MASK;
+        let score = s >> (COMB_COUNT + SIDES);
         State {
             combination_mask: combination_mask,
             sides_mask: sides_mask,
@@ -22,8 +22,8 @@ impl State {
 
     pub fn encode(&self) -> u32 {
         (self.combination_mask as u32)
-            | ((self.sides_mask as u32) << 12)
-            | (self.score << 18)
+            | ((self.sides_mask as u32) << COMB_COUNT)
+            | (self.score << (COMB_COUNT + SIDES))
     }
 
     pub fn initial() -> State {
@@ -37,13 +37,13 @@ impl State {
     pub fn all_sides() -> State {
         State {
             combination_mask: 0,
-            sides_mask: 0x3F,
+            sides_mask: SIDES_MASK,
             score: 0,
         }
     }
 
     pub fn done(&self) -> bool {
-        self.combination_mask == 0xFFF && self.sides_mask == 0x3F
+        self.combination_mask == COMB_MASK && self.sides_mask == SIDES_MASK
     }
 
     pub fn has_side(&self, side: usize) -> bool {
@@ -110,7 +110,7 @@ impl State {
 
     pub fn display_score(&self, mut points: u32) -> u32 {
         for d in 0..SIDES {
-            if self.has_side(d) { points -= 4 * (1 + d as u32); }
+            if self.has_side(d) { points -= BONUS_COUNT * (1 + d as u32); }
         }
         points
     }
@@ -130,7 +130,7 @@ impl fmt::Display for State {
         for d in 0..SIDES {
             if self.has_side(d) {
                 write!(f, "{}", d + 1)?;
-                score -= 4 * (d as i32 + 1);
+                score -= BONUS_COUNT as i32 * (d as i32 + 1);
             } else {
                 write!(f, "-")?;
                 has_all = false;
