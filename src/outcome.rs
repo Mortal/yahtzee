@@ -160,3 +160,21 @@ impl Iterator for OutcomeIterator {
         Some(result)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    use crate::constants::*;
+    #[test]
+    fn test_multiplicity() {
+        let mut sum = 0;
+        for o in outcomes() {
+            sum += o.multiplicity();
+        }
+        let mut exp = 1;
+        for _ in 0..DICE_COUNT {
+            exp *= SIDES;
+        }
+        assert_eq!(sum, exp);
+    }
+}

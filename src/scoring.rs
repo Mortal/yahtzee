@@ -3,6 +3,7 @@ use crate::constants::*;
 use crate::outcome::*;
 use crate::state::*;
 
+#[derive(PartialEq)]
 pub enum Action {
     Combination(Comb),
     Side(usize),
@@ -160,4 +161,45 @@ pub fn actions<F: FnMut(Action, State, u32)>(state: State, o: Outcome, mut f: F)
         }
         f(Action::Combination(comb), state.with_comb(comb), s);
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+    use crate::constants::*;
+    #[test]
+    fn test_actions() {
+        let s = State { combination_mask: 0x08ff, sides_mask: 0x01, score: 0 };
+        let o = Outcome { histogram: [0, 2, 0, 0, 3, 1] };
+        // 28.085730574395857   000018ff 0 1-----  -4 PDTVQWsS---!
+        let mut acts = Vec::new();
+        let mut states = Vec::new();
+        let mut pts = Vec::new();
+        actions(s, o, |action, next_state, points| {
+            acts.push(action);
+            states.push(next_state);
+            pts.push(points);
+        });
+        assert_eq!(acts, vec![
+            Action::Side(2 - 1),
+            Action::Side(3 - 1),
+            Action::Side(4 - 1),
+            Action::Side(5 - 1),
+            Action::Side(6 - 1),
+            Action::Combination(CHANCE),
+            Action::Combination(S23),
+            Action::Combination(R16),
+        ]);
+        assert_eq!(states, vec![
+            State { combination_mask: 0x08ff, sides_mask: 0x03, score: 4 },
+            State { combination_mask: 0x08ff, sides_mask: 0x05, score: 0 },
+            State { combination_mask: 0x08ff, sides_mask: 0x09, score: 0 },
+            State { combination_mask: 0x08ff, sides_mask: 0x11, score: 15 },
+            State { combination_mask: 0x08ff, sides_mask: 0x21, score: 6 },
+            State { combination_mask: 0x0cff, sides_mask: 0x01, score: 0 },
+            State { combination_mask: 0x0aff, sides_mask: 0x01, score: 0 },
+            State { combination_mask: 0x09ff, sides_mask: 0x01, score: 0 },
+        ]);
+        assert_eq!(pts, vec![4, 0, 0, 15, 6, 25, 19, 0]);
+    }
 }
