@@ -42,12 +42,12 @@ impl Outcome {
     }
 
     pub fn multiplicity(&self) -> usize {
-        let mut fac = [0; SIDES];
+        let mut fac = [0; DICE_COUNT];
         fac[0] = 1;
-        for i in 1..SIDES {
+        for i in 1..fac.len() {
             fac[i] = fac[i - 1] * (i + 1);
         }
-        let mut res = fac[SIDES - 1];
+        let mut res = fac[fac.len() - 1];
         for i in 0..SIDES {
             if self.histogram[i] > 0 {
                 res /= fac[self.histogram[i] as usize - 1];
