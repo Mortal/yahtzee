@@ -37,6 +37,42 @@ fn parse_outcome(line: &str) -> Option<Outcome> {
     Some(outcome)
 }
 
+struct Tokenizer<R: io::Read> {
+    reader: io::BufReader<R>,
+    line: String,
+    word: usize,
+}
+
+impl <R: io::Read> Tokenizer<R> {
+    fn new(inner: R) -> Self {
+        Tokenizer {
+            reader: io::BufReader::new(inner),
+            line: String::new(),
+            word: 0,
+        }
+    }
+
+    fn peek_word(&self) -> Option<&str> {
+        self.line.split_whitespace().nth(self.word)
+    }
+
+    fn next_word(&mut self) -> Option<&str> {
+        let res = self.line.split_whitespace().nth(self.word);
+        self.word += 1;
+        res
+    }
+
+    fn next<'a>(&'a mut self, prompt: &str) -> Option<&'a str> {
+        while None == self.peek_word() {
+            println!("{}", prompt);
+            self.line.clear();
+            self.reader.read_line(&mut self.line).unwrap();
+            self.word = 0;
+        }
+        self.next_word()
+    }
+}
+
 fn main() {
     let state_value = read_state_value().expect("Failed to read state value");
     let stdin = io::stdin();
