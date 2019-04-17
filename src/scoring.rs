@@ -30,12 +30,31 @@ impl fmt::Debug for Action {
     }
 }
 
-impl fmt::Display for Action {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+impl Action {
+    pub fn shorthand(&self) -> String {
         let symbols = b"PDTVQWsSCH?!";
         match self {
-            &Action::Combination(n) => write!(fmt, "{}", symbols[n] as char),
-            &Action::Side(s) => write!(fmt, "{}", s + 1),
+            &Action::Combination(n) => format!("{}", symbols[n] as char),
+            &Action::Side(s) => format!("{}", s + 1),
+        }
+    }
+
+    pub fn name(&self) -> String {
+        match self {
+            &Action::Combination(S2) => format!("Pair"),
+            &Action::Combination(S22) => format!("Two Pairs"),
+            &Action::Combination(S222) => format!("Three Pairs"),
+            &Action::Combination(S3) => format!("Three of a Kind"),
+            &Action::Combination(S4) => format!("Four of a Kind"),
+            &Action::Combination(S33) => format!("2xThree of a Kind"),
+            &Action::Combination(R15) => format!("Low Straight"),
+            &Action::Combination(R26) => format!("High Straight"),
+            &Action::Combination(R16) => format!("Cameron"),
+            &Action::Combination(S23) => format!("House"),
+            &Action::Combination(CHANCE) => format!("Chance"),
+            &Action::Combination(YAHTZEE) => format!("Yahtzee"),
+            &Action::Combination(c) => format!("Unknown {}", c),
+            &Action::Side(s) => format!("{}'s", s + 1),
         }
     }
 }

@@ -105,7 +105,7 @@ fn main() {
                 }
             });
             assert!(action_count > 0);
-            println!(", {} => {:3} points (exp.: {:.4})", best_action.unwrap(), best_points, points as f64 + best - BONUS_LIMIT as f64);
+            println!(", {} => {:3} points (exp.: {:.4})", best_action.unwrap().shorthand(), best_points, points as f64 + best - BONUS_LIMIT as f64);
             state = best_state.unwrap();
             points += best_points;
         }
