@@ -27,6 +27,10 @@ impl State {
             | (self.score << (COMB_COUNT + SIDES))
     }
 
+    pub fn turn_count(&self) -> u32 {
+        self.combination_mask.count_ones() + self.sides_mask.count_ones()
+    }
+
     pub fn initial() -> State {
         State {
             combination_mask: 0,

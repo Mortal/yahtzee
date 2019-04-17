@@ -214,7 +214,7 @@ fn main() {
         match parse_command(&mut reader, &mut game) {
             Command::Roll(mut outcome) => {
                 if game.roll_index == 0 {
-                    compute_outcome_values(state, &state_value, &mut outcome_value);
+                    compute_outcome_values(state, &mut |i| state_value[i as usize], &mut outcome_value);
                     compute_subset_expectations(&mut outcome_value);
                     compute_reroll_value(&outcome_value, &mut reroll_value);
                     compute_subset_expectations(&mut reroll_value);
@@ -222,7 +222,7 @@ fn main() {
                     game.prompt = format!("I would keep {}. Input roll:", outcome);
                     game.roll_index += 1;
                 } else if game.roll_index == 1 {
-                    compute_outcome_values(state, &state_value, &mut outcome_value);
+                    compute_outcome_values(state, &mut |i| state_value[i as usize], &mut outcome_value);
                     compute_subset_expectations(&mut outcome_value);
                     choose_reroll(&mut outcome, &outcome_value);
                     game.prompt = format!("I would keep {}. Input roll:", outcome);

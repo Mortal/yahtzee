@@ -3,12 +3,12 @@ use std::mem;
 use crate::*;
 use crate::constants::*;
 
-pub fn compute_outcome_values(state: State, state_value: &Vec<f64>, outcome_value: &mut Vec<f64>) {
+pub fn compute_outcome_values<F: FnMut(u32) -> f64>(state: State, state_value: &mut F, outcome_value: &mut Vec<f64>) {
     for o in outcomes() {
         let mut best = 0f64;
         actions(state, o, |_action, next_state, points| {
-            let i = next_state.encode() as usize;
-            let value = state_value[i] + points as f64;
+            let i = next_state.encode();
+            let value = state_value(i) + points as f64;
             best = best.max(value);
         });
         outcome_value[o.encode() as usize] = best;
@@ -104,7 +104,7 @@ pub fn compute_state_value<F: FnMut(usize, usize)>(mut pi: F) -> Vec<f64> {
     let mut best_subset_value = Vec::new();
     for i in (0..states).rev() {
         let s = State::decode(i as u32);
-        compute_outcome_values(s, &state_value, &mut outcome_value);
+        compute_outcome_values(s, &mut |i| state_value[i as usize], &mut outcome_value);
         compute_subset_expectations(&mut outcome_value);
 
         for _ in 0..REROLL_COUNT {

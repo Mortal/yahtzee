@@ -75,7 +75,7 @@ fn main() {
         while !state.done() {
             let mut outcome = random_outcome(&mut rng);
             print!("{:3} {} Roll {}", state.display_score(points), state, outcome);
-            compute_outcome_values(state, &state_value, &mut outcome_value);
+            compute_outcome_values(state, &mut |i| state_value[i as usize], &mut outcome_value);
             compute_subset_expectations(&mut outcome_value);
             compute_reroll_value(&outcome_value, &mut reroll_value);
             compute_subset_expectations(&mut reroll_value);
