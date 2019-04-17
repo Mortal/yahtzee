@@ -1,3 +1,12 @@
+// Ideas for interaction:
+// player 2 -> switch to player 2's turn
+// set ! 42 -> set Yahtzee row to 42 (forced result)
+// r 113456 -> roll and suggest actions
+// S -> choose action 'S'
+//
+// Initial roll: "I would keep 56 to go for two pairs"
+// Final roll: "I would take the obvious choice: ..." (i.e. the non-Chance one with highest score)
+// List other actions and their expectations rounded to integers (or a couple decimals if some are close)
 extern crate byteorder;
 
 use std::{io, fs};
