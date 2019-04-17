@@ -62,22 +62,23 @@ impl <R: io::Read> Tokenizer<R> {
         res
     }
 
-    fn next<'a>(&'a mut self, prompt: &str) -> Option<&'a str> {
-        while None == self.peek_word() {
-            println!("{}", prompt);
-            self.line.clear();
-            self.reader.read_line(&mut self.line).unwrap();
-            self.word = 0;
+    fn next<O, F: FnMut(&str) -> Option<O>>(&'a mut self, prompt: &str, mut parser: F) -> Option<O> {
+        loop {
+            while None == self.peek_word() {
+                println!("{}", prompt);
+                self.line.clear();
+                self.reader.read_line(&mut self.line).unwrap();
+                self.word = 0;
+            }
+            let r = self.next_word();
         }
-        self.next_word()
     }
 }
 
 fn main() {
     let state_value = read_state_value().expect("Failed to read state value");
     let stdin = io::stdin();
-    let mut reader = io::BufReader::new(stdin.lock());
-    let mut line_buf = String::new();
+    let mut reader = Tokenizer::new(stdin.lock());
 
     let mut outcome_value = vec![0.0; max_outcome_encoding() + 1];
     let mut reroll_value = vec![0.0; outcome_value.len()];
@@ -89,12 +90,8 @@ fn main() {
         score: 0,
     };
     while !state.done() {
-        println!("{:3} {} Input roll:", state.display_score(points), state);
-
-        line_buf.clear();
-        reader.read_line(&mut line_buf).unwrap();
-        let line = line_buf.trim();
-        let mut outcome = match parse_outcome(line) {
+        let word = reader.next(format!("{:3} {} Input roll:", state.display_score(points), state), |w| parse_outcome(w));
+        let mut outcome = match parse_outcome(word) {
             Some(o) => o,
             None => {
                 println!("Couldn't understand your roll {:?}", line);
