@@ -1,0 +1,27 @@
+notifications:
+  email: false
+matrix:
+  include:
+  - sudo: required
+    services:
+    - docker
+    env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+  - sudo: required
+    services:
+    - docker
+    env: DOCKER_IMAGE=quay.io/pypa/manylinux1_i686 PRE_CMD=linux32
+install:
+- docker pull $DOCKER_IMAGE
+script:
+- docker run --rm -v `pwd`:/work $DOCKER_IMAGE $PRE_CMD /work/travis/build-wheels.sh
+- ls wheelhouse/
+deploy:
+  provider: releases
+  api_key:
+    secure: qr4w/4YWGvplUwrnXBIq5UJx5fitTs9AeCu/iiExGgqZu+0GdP1onIqFDFE/AgnH/USAL8MXrZHdHOVl3ywLHQWgXAioFQ02ykZsNIzSjQoyN3WHMjzbMWVksx+St+QVBvjVC4R/mb4OLcJlzukZFSOukTG1Npnx+ffsL+nx3W/d4D3nLzhaJd6SSeBkOwg3fd/oTw0OzWz3Aw3+B4zqHHWhCoBI/9dREGZ+en3Yfpt1e+yh5g27jFFSjGll7jahYVdYW8kz8XYQmA2iFn3UXnlTl7+syz9F0AYmF9ubg5q58ASdv/EiDlfe+1WdVueFdvM+piZV94WIPMw+YQB60waYL4I+8Ppv80ILVr0lJ09xmmvaVNwkcgqe1vYGFyvIzrNKCXpNUuK+yvr2BALWKtHdbWcNxNW1X6lo23aUYcpNjhzKasgzFWUR1Ywx2ya+oY9ITNVsOXWBIBHoqa0qkj8hj/wC7UWVE6F0Wc8AB+WNEa/RBkqNh3dENVrrKz68U3uSquUoZMky0ajU64/asuEhYUB5cIExlk6kNE0HQGZVwCqlM2e+b2Ecxd4S8bnYKi755Nu857RGXWNOxke2gmhfVN0sQJonQBfidnnv1R5o3QR/jXK8Z1kemlZg6HUCuLRY8JO2NIi+0wyJ0BaQpydX/XP2DM/SAJIaPafCl6c=
+  skip_cleanup: true
+  file_glob: true
+  file: wheelhouse/yahtzeevalue-*.whl
+  on:
+    repo: Mortal/yahtzeevalue
+    tags: true
