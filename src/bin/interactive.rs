@@ -7,26 +7,12 @@
 // Initial roll: "I would keep 56 to go for two pairs"
 // Final roll: "I would take the obvious choice: ..." (i.e. the non-Chance one with highest score)
 // List other actions and their expectations rounded to integers (or a couple decimals if some are close)
-extern crate byteorder;
-
-use std::{io, fs};
+use std::io;
 use std::io::BufRead;
-use byteorder::{LittleEndian, ReadBytesExt};
 
 extern crate yahtzee;
 use yahtzee::*;
 use yahtzee::constants::*;
-
-fn read_state_value() -> io::Result<Vec<f64>> {
-    let file = fs::File::open("state_value.bin")?;
-    let size = file.metadata()?.len() as usize;
-    let mut reader = io::BufReader::new(file);
-    let mut state_value = vec![0f64; size / 8];
-    for x in state_value.iter_mut() {
-        *x = reader.read_f64::<LittleEndian>()?;
-    }
-    Ok(state_value)
-}
 
 fn parse_outcome(line: &str) -> Option<Outcome> {
     if line.len() != DICE_COUNT {
@@ -188,7 +174,7 @@ Commands:
 ";
 
 fn main() {
-    let state_value = read_state_value().expect("Failed to read state value");
+    let state_value = Store::new().expect("Failed to read state value");
     let stdin = io::stdin();
     let mut reader = Tokenizer::new(stdin.lock());
 
@@ -214,7 +200,7 @@ fn main() {
         match parse_command(&mut reader, &mut game) {
             Command::Roll(mut outcome) => {
                 if game.roll_index == 0 {
-                    compute_outcome_values(state, &mut |i| state_value[i as usize], &mut outcome_value);
+                    compute_outcome_values(state, &mut |i| state_value.get(i), &mut outcome_value);
                     compute_subset_expectations(&mut outcome_value);
                     compute_reroll_value(&outcome_value, &mut reroll_value);
                     compute_subset_expectations(&mut reroll_value);
@@ -222,7 +208,7 @@ fn main() {
                     game.prompt = format!("I would keep {}. Input roll:", outcome);
                     game.roll_index += 1;
                 } else if game.roll_index == 1 {
-                    compute_outcome_values(state, &mut |i| state_value[i as usize], &mut outcome_value);
+                    compute_outcome_values(state, &mut |i| state_value.get(i), &mut outcome_value);
                     compute_subset_expectations(&mut outcome_value);
                     choose_reroll(&mut outcome, &outcome_value);
                     game.prompt = format!("I would keep {}. Input roll:", outcome);
@@ -232,7 +218,7 @@ fn main() {
                     game.choices.clear();
                     actions(state, outcome, |action, next_state, action_points| {
                         let i = next_state.encode();
-                        let value = state_value[i as usize] + points as f64 + action_points as f64 - BONUS_LIMIT as f64;
+                        let value = state_value.get(i) + points as f64 + action_points as f64 - BONUS_LIMIT as f64;
                         game.choices.push((value, action, i, action_points));
                     });
                     game.choices.sort_by(|x, y| x.0.partial_cmp(&y.0).unwrap());

@@ -96,6 +96,23 @@ fn expectation_over_outcomes(outcome_value: &Vec<f64>) -> f64 {
     numerator / denominator as f64
 }
 
+//pub struct Valuation {
+//    value_for_roll: [Vec<f64>; 3],
+//    current_state: u32,
+//}
+//
+//impl Valuation {
+//    pub fn new() -> Self {
+//        let outcome_value = vec![0.0; max_outcome_encoding() + 1];
+//        let best_subset_value = vec![0.0; outcome_value.len()];
+//        Valuation {
+//            outcome_value: outcome_value,
+//            best_subset_value: best_subset_value,
+//            current_state: -1i32 as u32,
+//        }
+//    }
+//}
+
 pub fn compute_state_value<F: FnMut(usize, usize)>(mut pi: F) -> Vec<f64> {
     let states = (1 + BONUS_LIMIT as usize) << (SIDES + COMB_COUNT);
     pi(0, states);

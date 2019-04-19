@@ -12,6 +12,9 @@ pub use scoring::{Action, actions};
 mod valuation;
 pub use valuation::{compute_state_value, compute_outcome_values, compute_subset_expectations, compute_reroll_value, choose_reroll};
 
+mod store;
+pub use store::Store;
+
 #[cfg(test)]
 mod tests {
     use super::*;
