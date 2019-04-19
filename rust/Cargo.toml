@@ -1,5 +1,5 @@
 [package]
-name = "yahtzee"
+name = "yahtzeevalue"
 version = "0.1.0"
 authors = ["Mathias Rav <m@git.strova.dk>"]
 edition = "2018"

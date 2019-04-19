@@ -174,7 +174,7 @@ Commands:
 ";
 
 fn main() {
-    let state_value = Store::new().expect("Failed to read state value");
+    let state_value = Store::new("state_value.bin").expect("Failed to read state value");
     let stdin = io::stdin();
     let mut reader = Tokenizer::new(stdin.lock());
 

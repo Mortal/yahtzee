@@ -20,8 +20,8 @@ impl From<io::Error> for Error {
 }
 
 impl Store {
-    pub fn new() -> Result<Store> {
-        let file = fs::File::open("state_value.bin")?;
+    pub fn new(path: &str) -> Result<Store> {
+        let file = fs::File::open(path)?;
         let mmap = unsafe { memmap::Mmap::map(&file)? };
         Ok(Store {
             mmap: mmap,
