@@ -1,2 +1,7 @@
-/target
-**/*.rs.bk
+__pycache__
+/build
+/dist
+/rust/state_value.bin
+/rust/target
+/yahtzeevalue.egg-info
+/yahtzeevalue/_native__lib.so
