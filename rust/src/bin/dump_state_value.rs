@@ -1,10 +1,10 @@
 extern crate byteorder;
-extern crate yahtzee;
+extern crate yahtzeevalue;
 
 use std::{io, fs};
 use byteorder::{LittleEndian, ReadBytesExt};
 
-use yahtzee::*;
+use yahtzeevalue::*;
 
 fn read_state_value() -> io::Result<Vec<f64>> {
     let file = fs::File::open("state_value.bin")?;

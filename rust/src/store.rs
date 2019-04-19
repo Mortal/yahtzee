@@ -1,22 +1,12 @@
 extern crate byteorder;
 extern crate memmap;
 
-use std::{fs, io, result};
+use std::fs;
 use byteorder::{ByteOrder, LittleEndian};
-
-#[derive(Debug)]
-pub struct Error(&'static str);
-
-pub type Result<T> = result::Result<T, Error>;
+use crate::Result;
 
 pub struct Store {
     mmap: memmap::Mmap,
-}
-
-impl From<io::Error> for Error {
-    fn from(_e: io::Error) -> Error {
-        Error("io::Error")
-    }
 }
 
 impl Store {

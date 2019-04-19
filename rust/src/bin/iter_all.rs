@@ -1,6 +1,6 @@
-extern crate yahtzee;
-use yahtzee::*;
-use yahtzee::constants::*;
+extern crate yahtzeevalue;
+use yahtzeevalue::*;
+use yahtzeevalue::constants::*;
 
 fn main() {
     let mut best_score = vec![0xFFFFu16; (1 + BONUS_LIMIT as usize) << 18];

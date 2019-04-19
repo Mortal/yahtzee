@@ -4,9 +4,9 @@ use std::{io, fs};
 use std::io::BufRead;
 use byteorder::{LittleEndian, ReadBytesExt};
 
-extern crate yahtzee;
-use yahtzee::*;
-use yahtzee::constants::*;
+extern crate yahtzeevalue;
+use yahtzeevalue::*;
+use yahtzeevalue::constants::*;
 
 fn read_state_value() -> io::Result<Vec<f64>> {
     let file = fs::File::open("state_value.bin")?;

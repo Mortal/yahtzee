@@ -1,6 +1,6 @@
-extern crate yahtzee;
-use yahtzee::*;
-use yahtzee::constants::*;
+extern crate yahtzeevalue;
+use yahtzeevalue::*;
+use yahtzeevalue::constants::*;
 
 fn main() {
     for i in 0..18 {

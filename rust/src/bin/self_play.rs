@@ -4,9 +4,9 @@ extern crate byteorder;
 use std::{io, fs};
 use byteorder::{LittleEndian, ReadBytesExt};
 
-extern crate yahtzee;
-use yahtzee::*;
-use yahtzee::constants::*;
+extern crate yahtzeevalue;
+use yahtzeevalue::*;
+use yahtzeevalue::constants::*;
 
 fn random_outcome<R: rand::Rng>(rng: &mut R) -> Outcome {
     let mut outcome = Outcome::empty();

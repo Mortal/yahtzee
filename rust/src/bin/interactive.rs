@@ -10,9 +10,9 @@
 use std::io;
 use std::io::BufRead;
 
-extern crate yahtzee;
-use yahtzee::*;
-use yahtzee::constants::*;
+extern crate yahtzeevalue;
+use yahtzeevalue::*;
+use yahtzeevalue::constants::*;
 
 fn parse_outcome(line: &str) -> Option<Outcome> {
     if line.len() != DICE_COUNT {

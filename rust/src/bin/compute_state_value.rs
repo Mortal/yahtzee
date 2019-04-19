@@ -1,13 +1,13 @@
 //! Compute expected value for the optimal strategy in every state of
 //! Super Yahtzee. Takes between 100 and 140 minutes to compute.
-extern crate yahtzee;
+extern crate yahtzeevalue;
 extern crate byteorder;
 
 use std::{io, fs};
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
-use yahtzee::compute_state_value;
+use yahtzeevalue::compute_state_value;
 
 fn main() {
     let file = fs::File::create("state_value.tmp").expect("Could not open file");

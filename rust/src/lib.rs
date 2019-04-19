@@ -1,3 +1,10 @@
+#[macro_use]
+mod bridge;
+mod cabi;
+
+mod err;
+pub use err::{Error, ErrorKind, Result};
+
 pub mod constants;
 
 mod outcome;
