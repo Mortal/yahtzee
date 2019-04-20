@@ -1,6 +1,6 @@
 use std::os::raw::{c_int, c_char, c_double};
 use std::ffi::{CStr, CString};
-use crate::{Store, Result, ErrorKind};
+use crate::{Store, Result, ErrorKind, Outcome};
 use crate::bridge::*;
 
 #[no_mangle]
@@ -22,10 +22,37 @@ export!(yahtzeevalue_unload(db: *mut Store) -> Result<c_int> {
     Ok(0)
 });
 
-export!(yahtzeevalue_lookup(db: *mut Store, key: c_int) -> Result<c_double> {
-    let key = key as u32;
-    if key >= (*db).len() {
+export!(yahtzeevalue_lookup(db: *mut Store, state: c_int) -> Result<c_double> {
+    let state = state as u32;
+    if state >= (*db).len() {
         return Err(ErrorKind::Range.into());
     }
-    Ok((*db).get(key))
+    Ok((*db).get(state))
+});
+
+export!(yahtzeevalue_best_action(db: *mut Store, state: c_int, histogram: c_int) -> Result<c_int> {
+    let state = state as u32;
+    if state >= (*db).len() {
+        return Err(ErrorKind::Range.into());
+    }
+    let outcome = Outcome::decode(histogram as u32);
+    (*db).best_action(state, outcome).map(|v| v as c_int).ok_or(ErrorKind::GameOver.into())
+});
+
+export!(yahtzeevalue_keep_first(db: *mut Store, state: c_int, histogram: c_int) -> Result<c_int> {
+    let state = state as u32;
+    if state >= (*db).len() {
+        return Err(ErrorKind::Range.into());
+    }
+    let outcome = Outcome::decode(histogram as u32);
+    Ok((*db).keep_first(state, outcome) as c_int)
+});
+
+export!(yahtzeevalue_keep_second(db: *mut Store, state: c_int, histogram: c_int) -> Result<c_int> {
+    let state = state as u32;
+    if state >= (*db).len() {
+        return Err(ErrorKind::Range.into());
+    }
+    let outcome = Outcome::decode(histogram as u32);
+    Ok((*db).keep_second(state, outcome) as c_int)
 });

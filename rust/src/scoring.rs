@@ -126,11 +126,11 @@ fn score_singles<F: FnMut(Comb, u32)>(o: Outcome, f: &mut F) {
     }
     if singles == 6 {
         f(R15, 15);
-        f(R26, 21);
+        f(R26, 20);
         f(R16, 30);
     } else if singles == 4 && o.histogram[0] == 0 {
         f(R15, 0);
-        f(R26, 21);
+        f(R26, 20);
         f(R16, 0);
     } else if singles == 4 && o.histogram[5] == 0 {
         f(R15, 15);

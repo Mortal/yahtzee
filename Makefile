@@ -1,6 +1,6 @@
 # Makefile based on https://github.com/getsentry/symbolic
 NAME=yahtzeevalue
-VERSION='0.1.0'
+VERSION='0.2.0'
 PYTHON=python3
 
 all: wheel

@@ -27,16 +27,41 @@ class FileNotFoundError(YahtzeeError):
     pass
 
 
+class GameOverError(YahtzeeError):
+    pass
+
+
 _special_errors = {
     1: UnicodeDecodeError,
     2: RangeError,
     3: IOError,
     4: FileNotFoundError,
+    5: GameOverError,
 }
 
 _rustcall = _bridge.make_rustcall(
     "struct yahtzeevalue_error *", _lib.yahtzeevalue_free, _special_errors, _ffi
 )
+
+
+def encode_roll(roll):
+    histogram = [0] * 6
+    for v in roll:
+        histogram[v - 1] += 1
+    encoding = 0
+    acc = 1
+    for i, v in enumerate(histogram):
+        encoding += acc * v
+        acc *= 7
+    return encoding
+
+
+def decode_roll(encoding):
+    histogram = [0] * 6
+    for i in range(len(histogram)):
+        encoding, res = divmod(encoding, 7)
+        histogram[i] = res
+    return [i + 1 for i, v in enumerate(histogram) for _ in range(v)]
 
 
 class Database:
@@ -51,5 +76,14 @@ class Database:
         _rustcall(_lib.yahtzeevalue_unload, self._handle)
         del self._handle
 
-    def __getitem__(self, key):
-        return _rustcall(_lib.yahtzeevalue_lookup, self._handle, key)
+    def lookup(self, state):
+        return _rustcall(_lib.yahtzeevalue_lookup, self._handle, state)
+
+    def best_action(self, state, histogram):
+        return _rustcall(_lib.yahtzeevalue_best_action, self._handle, state, encode_roll(histogram))
+
+    def keep_first(self, state, histogram):
+        return decode_roll(_rustcall(_lib.yahtzeevalue_keep_first, self._handle, state, encode_roll(histogram)))
+
+    def keep_second(self, state, histogram):
+        return decode_roll(_rustcall(_lib.yahtzeevalue_keep_second, self._handle, state, encode_roll(histogram)))

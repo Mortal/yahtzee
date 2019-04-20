@@ -8,6 +8,7 @@ pub enum ErrorKind {
     Range,
     Io(io::Error),
     FileNotFound,
+    GameOver,
 }
 
 #[derive(Debug)]
@@ -28,6 +29,7 @@ impl fmt::Display for Error {
             ErrorKind::Range => write!(f, "State index out of range."),
             ErrorKind::Io(ref e) => write!(f, "{}", e),
             ErrorKind::FileNotFound => write!(f, "File not found."),
+            ErrorKind::GameOver => write!(f, "Game over."),
         }
     }
 }
@@ -39,6 +41,7 @@ impl CError for Error {
             ErrorKind::Range => 2,
             ErrorKind::Io(_) => 3,
             ErrorKind::FileNotFound => 4,
+            ErrorKind::GameOver => 5,
         }
     }
 }
